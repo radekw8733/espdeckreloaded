@@ -10,6 +10,7 @@ WebServer server(80);
 #pragma region VARIOUS DECLARATIONS
 struct t_settings {
     int parola_speed = 30;
+    int parola_pause = 2000;
 };
 String accessToken;
 #pragma endregion
@@ -20,7 +21,7 @@ void setup()
     preferences.begin("espdeckreloaded");
     loadSettings();
     lcd.begin();
-    lcd.displayText("Initializing",PA_LEFT,globalSettings.parola_speed,2000,PA_SCROLL_LEFT,PA_SCROLL_DOWN);
+    lcd.displayText("Initializing",PA_LEFT,globalSettings.parola_speed,globalSettings.parola_pause,PA_SCROLL_LEFT,PA_SCROLL_DOWN);
     //lcd.print("Initializing");
     if (!preferences.getBool("isInitialized")) {
         WiFi.mode(WIFI_AP);
@@ -30,6 +31,8 @@ void setup()
                 preferences.putString("accessToken",server.arg("accessToken"));
                 accessToken = server.arg("accessToken");
                 server.send(200,"text/plain","OK Access Token set");
+                server.close();
+                preferences.putBool("isInitialized",true);
             }
         });
         server.begin();
