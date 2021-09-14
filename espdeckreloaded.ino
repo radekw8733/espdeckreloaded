@@ -25,15 +25,15 @@ void setup()
     if (!preferences.getBool("isInitialized")) {
         WiFi.mode(WIFI_AP);
         WiFi.softAP("Espdeck Reloaded");
+        server.on("/setup", []() {
+            if (server.arg("accessToken") != "") {
+                preferences.putString("accessToken",server.arg("accessToken"));
+                accessToken = server.arg("accessToken");
+                server.send(200,"text/plain","OK Access Token set");
+            }
+        });
+        server.begin();
     }
-    server.on("/setup", []() {
-        if (server.arg("accessToken") != "") {
-            preferences.putString("accessToken",server.arg("accessToken"));
-            accessToken = server.arg("accessToken");
-            server.send(200,"text/plain","OK Access Token set");
-        }
-    });
-    server.begin();
 }
 
 void loop()
