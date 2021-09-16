@@ -4,10 +4,14 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <Preferences.h>
-//#include "artwork.h"
+
+#define DEBUG_TO_SERIAL // print debug info to usb serial port
+
 Preferences preferences;
-MD_Parola lcd = MD_Parola(MD_MAX72XX::FC16_HW,5,4);
+MD_Parola matrix = MD_Parola(MD_MAX72XX::FC16_HW,5,4);
+// MD_Parola matrix = MD_Parola(MD_MAX72XX::FC16_HW, DATA_PIN, CLK_PIN, CS_PIN);  // use software SPI on matrix
 WebServer server(80);
+
 #pragma region VARIOUS DECLARATIONS
 struct t_settings {
     int parola_speed = 30;
@@ -23,20 +27,23 @@ String accessToken;
 SimpleTextDisplay simpleText;
 std::vector<Module*> modules = {};
 #pragma endregion
+
 #include "artwork.h"
 
 //MD_Parola lcd = MD_Parola(MD_MAX72XX::FC16_HW,23,18,5,4);
 void setup()
 {
+    #ifdef DEBUG_TO_SERIAL
     Serial.begin(115200);
+    #endif
     for (int i = 0; i < 8; i++) {
         Serial.println(artwork[i]);
     }
     preferences.begin("espdeckreloaded");
     loadSettings();
     Serial.println("Initializing matrix screen...");
-    lcd.begin();
-    lcd.displayText("Initializing",PA_LEFT,globalSettings.parola_speed,globalSettings.parola_pause,PA_SCROLL_LEFT,PA_SCROLL_DOWN);
+    matrix.begin();
+    matrix.displayText("Initializing",PA_LEFT,globalSettings.parola_speed,globalSettings.parola_pause,PA_SCROLL_LEFT,PA_SCROLL_DOWN);
     if (!preferences.getBool("isInitialized")) {
         WiFi.mode(WIFI_AP);
         WiFi.softAP("Espdeck Reloaded");
@@ -66,13 +73,13 @@ void loop()
 {
     for (int i = 0; i < modules.size(); i++) {
         Serial.println("Executing module " + String(i) + " module name: " + modules[i]->moduleName);
-        lcd.displayClear();
+        matrix.displayClear();
 
         long millisStart = millis();
         modules[i]->matrixProgram();
         long millisEnd = millis();
         while (millisStart + (1000 - (millisEnd - millisStart)) > millis()) {
-            lcd.displayAnimate();
+            matrix.displayAnimate();
         }
     }
 }
