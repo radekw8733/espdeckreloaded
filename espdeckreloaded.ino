@@ -6,6 +6,7 @@
 #include <Preferences.h>
 
 #define DEBUG_TO_SERIAL // print debug info to usb serial port
+#define ADD_FASTLED  // include FastLED library to add 
 
 Preferences preferences;
 MD_Parola matrix = MD_Parola(MD_MAX72XX::FC16_HW,5,4);
@@ -13,11 +14,6 @@ MD_Parola matrix = MD_Parola(MD_MAX72XX::FC16_HW,5,4);
 WebServer server(80);
 
 #pragma region VARIOUS DECLARATIONS
-struct t_settings {
-    int parola_speed = 30;
-    int parola_pause = 2000;
-};
-t_settings globalSettings;
 String accessToken;
 #pragma endregion
 
@@ -29,6 +25,9 @@ std::vector<Module*> modules = {};
 #pragma endregion
 
 #include "artwork.h"
+#ifdef ADD_FASTLED
+#include <FastLED.h>
+#endif
 
 //MD_Parola lcd = MD_Parola(MD_MAX72XX::FC16_HW,23,18,5,4);
 void setup()
@@ -40,10 +39,9 @@ void setup()
         Serial.println(artwork[i]);
     }
     preferences.begin("espdeckreloaded");
-    loadSettings();
     Serial.println("Initializing matrix screen...");
     matrix.begin();
-    matrix.displayText("Initializing",PA_LEFT,globalSettings.parola_speed,globalSettings.parola_pause,PA_SCROLL_LEFT,PA_SCROLL_DOWN);
+    matrix.displayText("Initializing",PA_LEFT,preferences.getInt("parola_speed"),preferences.getInt("parola_pause"),PA_SCROLL_LEFT,PA_SCROLL_DOWN);
     if (!preferences.getBool("isInitialized")) {
         WiFi.mode(WIFI_AP);
         WiFi.softAP("Espdeck Reloaded");
@@ -94,9 +92,4 @@ void moduleLoop(void * parameters) {
             vTaskDelay(1);
         }
     }
-}
-
-void loadSettings() {
-    globalSettings.parola_speed = preferences.getInt("parola_speed", 30);
-    globalSettings.parola_pause = preferences.getInt("parola_pause", 2000);
 }
