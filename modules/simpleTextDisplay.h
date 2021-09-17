@@ -20,14 +20,11 @@ class SimpleTextDisplay : public Module {
             Serial.println(counter);
             sprintf(buffer,"%d",counter);
             matrix.displayText(buffer,PA_CENTER,prefs.getInt("parola_speed",30),prefs.getInt("parola_pause",2000),PA_SCROLL_LEFT);
+            ledStrip.clear();
             for (int i = 0; i < ledStrip.numPixels(); i++) {
-                hueCounter += 100;
-                if (hueCounter > 65535) {
-                    hueCounter = 0;
-                }
-                ledStrip.setPixelColor(i,ledStrip.ColorHSV(hueCounter));
+                ledStrip.setPixelColor(i,ledStrip.ColorHSV(random(0,65535)));
+                ledStrip.show();
             }
-            ledStrip.show();
         }
 };
 #endif

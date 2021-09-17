@@ -45,8 +45,7 @@ void setup()
     #ifdef ADD_NEOPIXEL
     ledStrip = *(new Adafruit_NeoPixel(10, prefs.getInt("neopixel_pin",12)));
     ledStrip.begin();
-    ledStrip.setBrightness(prefs.getInt("neopixel_brightness"));
-    ledStrip.show();
+    ledStrip.setBrightness(50);
     #endif
     if (!prefs.getBool("isInitialized")) {
         WiFi.mode(WIFI_AP);
