@@ -75,14 +75,15 @@ void setup()
 void loop()
 {
     for (int i = 0; i < modules.size(); i++) {
-        Serial.println("Executing module " + String(i) + " module name: " + modules[i]->moduleName);
-        matrix.displayClear();
-
-        long millisStart = millis();
-        modules[i]->matrixProgram();
-        long millisEnd = millis();
-        while (millisStart + (modules[i]->matrixRefreshRate - (millisEnd - millisStart)) > millis()) {
-            matrix.displayAnimate();
+        if (modules[i]->isEnabled == true) {
+            Serial.println("Executing module " + String(i) + " module name: " + modules[i]->moduleName);
+            matrix.displayClear();
+            long millisStart = millis();
+            modules[i]->matrixProgram();
+            long millisEnd = millis();
+            while (millisStart + (modules[i]->matrixRefreshRate - (millisEnd - millisStart)) > millis()) {
+                matrix.displayAnimate();
+            }
         }
     }
 }
@@ -90,11 +91,13 @@ void loop()
 void moduleLoop(void * parameters) {
     for (;;) {
         for (int i = 0; i < modules.size(); i++) {
-            long millisStart = millis();
-            modules[i]->backend();
-            long millisEnd = millis();
-            while (millisStart + (modules[i]->backendRefreshRate - (millisEnd - millisStart)) > millis()) {
-                vTaskDelay(1);
+            if (modules[i]->isEnabled == true) {
+                long millisStart = millis();
+                modules[i]->backend();
+                long millisEnd = millis();
+                while (millisStart + (modules[i]->backendRefreshRate - (millisEnd - millisStart)) > millis()) {
+                    vTaskDelay(1);
+                }
             }
         }
     }

@@ -3,6 +3,8 @@
 class Module {
     public:
         String moduleName = "Unnamed module";
+        String id = "unnamedModule";
+        bool isEnabled = true;
         int matrixRefreshRate = 2000;
         int backendRefreshRate = 2000;
 

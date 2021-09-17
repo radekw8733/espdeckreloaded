@@ -10,6 +10,7 @@ class SimpleTextDisplay : public Module {
     public:
         void begin() {
             moduleName = "Simple Text Display Module";
+            id = "simpleTextModule";
         }
 
         void backend() {
@@ -20,11 +21,13 @@ class SimpleTextDisplay : public Module {
             Serial.println(counter);
             sprintf(buffer,"%d",counter);
             matrix.displayText(buffer,PA_CENTER,prefs.getInt("parola_speed",30),prefs.getInt("parola_pause",2000),PA_SCROLL_LEFT);
+            #ifdef ADD_NEOPIXEL
             ledStrip.clear();
             for (int i = 0; i < ledStrip.numPixels(); i++) {
                 ledStrip.setPixelColor(i,ledStrip.ColorHSV(random(0,65535)));
                 ledStrip.show();
             }
+            #endif ADD_NEOPIXEL
         }
 };
 #endif
