@@ -6,15 +6,20 @@
 #include <Preferences.h>
 
 #define DEBUG_TO_SERIAL // print debug info to usb serial port
-#define ADD_FASTLED  // include FastLED library to add 
+#define ADD_NEOPIXEL  // include FastLED library to add 
 
-Preferences preferences;
+Preferences prefs;
 MD_Parola matrix = MD_Parola(MD_MAX72XX::FC16_HW,5,4);
 // MD_Parola matrix = MD_Parola(MD_MAX72XX::FC16_HW, DATA_PIN, CLK_PIN, CS_PIN);  // use software SPI on matrix
 WebServer server(80);
 
 #pragma region VARIOUS DECLARATIONS
 String accessToken;
+#include "artwork.h"
+#ifdef ADD_NEOPIXEL
+#include <Adafruit_NeoPixel.h>
+Adafruit_NeoPixel ledStrip;
+#endif
 #pragma endregion
 
 #pragma region MODULES
@@ -23,11 +28,6 @@ String accessToken;
 SimpleTextDisplay simpleText;
 std::vector<Module*> modules = {};
 #pragma endregion
-
-#include "artwork.h"
-#ifdef ADD_FASTLED
-#include <FastLED.h>
-#endif
 
 //MD_Parola lcd = MD_Parola(MD_MAX72XX::FC16_HW,23,18,5,4);
 void setup()
@@ -38,20 +38,26 @@ void setup()
     for (int i = 0; i < 8; i++) {
         Serial.println(artwork[i]);
     }
-    preferences.begin("espdeckreloaded");
+    prefs.begin("espdeckreloaded");
     Serial.println("Initializing matrix screen...");
     matrix.begin();
-    matrix.displayText("Initializing",PA_LEFT,preferences.getInt("parola_speed"),preferences.getInt("parola_pause"),PA_SCROLL_LEFT,PA_SCROLL_DOWN);
-    if (!preferences.getBool("isInitialized")) {
+    matrix.displayText("Initializing",PA_LEFT,prefs.getInt("parola_speed"),prefs.getInt("parola_pause"),PA_SCROLL_LEFT,PA_SCROLL_DOWN);
+    #ifdef ADD_NEOPIXEL
+    ledStrip = *(new Adafruit_NeoPixel(10, prefs.getInt("neopixel_pin",12)));
+    ledStrip.begin();
+    ledStrip.setBrightness(prefs.getInt("neopixel_brightness"));
+    ledStrip.show();
+    #endif
+    if (!prefs.getBool("isInitialized")) {
         WiFi.mode(WIFI_AP);
         WiFi.softAP("Espdeck Reloaded");
         server.on("/setup", []() {
             if (server.arg("accessToken") != "") {
-                preferences.putString("accessToken",server.arg("accessToken"));
+                prefs.putString("accessToken",server.arg("accessToken"));
                 accessToken = server.arg("accessToken");
                 server.send(200,"text/plain","OK Access Token set");
                 server.close();
-                preferences.putBool("isInitialized",true);
+                prefs.putBool("isInitialized",true);
             }
         });
         server.begin();
@@ -76,7 +82,7 @@ void loop()
         long millisStart = millis();
         modules[i]->matrixProgram();
         long millisEnd = millis();
-        while (millisStart + (1000 - (millisEnd - millisStart)) > millis()) {
+        while (millisStart + (modules[i]->matrixRefreshRate - (millisEnd - millisStart)) > millis()) {
             matrix.displayAnimate();
         }
     }
@@ -88,8 +94,9 @@ void moduleLoop(void * parameters) {
             long millisStart = millis();
             modules[i]->backend();
             long millisEnd = millis();
-            Serial.println("Module " + modules[i]->moduleName + " execution time: " + (millisEnd - millisStart) + " ms");
-            vTaskDelay(1);
+            while (millisStart + (modules[i]->backendRefreshRate - (millisEnd - millisStart)) > millis()) {
+                vTaskDelay(1);
+            }
         }
     }
 }
