@@ -15,6 +15,8 @@ WebServer server(80);
 
 #pragma region VARIOUS DECLARATIONS
 String accessToken;
+bool wasResetHoldBefore;
+long resetButtonTimeCounter;
 #include "artwork.h"
 #ifdef ADD_NEOPIXEL
 #include <Adafruit_NeoPixel.h>
@@ -39,6 +41,7 @@ void setup()
         Serial.println(artwork[i]);
     }
     prefs.begin("espdeckreloaded");
+    pinMode(14,INPUT_PULLUP);
     Serial.println("Initializing matrix screen...");
     matrix.begin();
     matrix.displayText("Initializing",PA_LEFT,prefs.getInt("parola_speed"),prefs.getInt("parola_pause"),PA_SCROLL_LEFT,PA_SCROLL_DOWN);
@@ -82,9 +85,30 @@ void loop()
             modules[i]->matrixProgram();
             long millisEnd = millis();
             while (millisStart + (modules[i]->matrixRefreshRate - (millisEnd - millisStart)) > millis()) {
+                checkResetButton();
                 matrix.displayAnimate();
             }
         }
+    }
+}
+
+void checkResetButton() {
+    if (digitalRead(14) == LOW) {
+        if (wasResetHoldBefore == true) {
+            if (millis() > resetButtonTimeCounter + 3000) {
+                prefs.clear();
+                ESP.restart();
+            }
+            else {
+                resetButtonTimeCounter = millis();
+            }
+        }
+        else {
+            wasResetHoldBefore = true;
+        }
+    }
+    else {
+        wasResetHoldBefore = false;
     }
 }
 
