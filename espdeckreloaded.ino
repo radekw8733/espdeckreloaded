@@ -57,7 +57,7 @@ void setup()
         WiFi.mode(WIFI_AP);
         WiFi.softAP("Espdeck Reloaded");
         server.on("/setup", []() {
-            if (server.arg("accessToken") != "" && server.arg("wifiSSID") != "" && server.arg("wifiPASS") != "") {
+            if (server.arg("wifiSSID") != "" && server.arg("wifiPASS") != "") {
                 prefs.putString("accessToken",server.arg("accessToken"));
                 prefs.putString("wifi_SSID",server.arg("wifiSSID"));
                 prefs.putString("wifi_PASS",server.arg("wifiPASS"));
@@ -73,7 +73,7 @@ void setup()
                 ESP.restart();
             }
             else {
-                server.send(400,"text/plain","No Access Token provided");
+                server.send(400,"text/plain","No WIFi setup parameters provided");
             }
         });
         server.begin();
@@ -133,6 +133,9 @@ void setup()
             else {
                 server.send(400,"text/plain","No module id provided");
             }
+        });
+        apiServer.on("/info", []{
+            
         });
         apiServer.begin();
     }
